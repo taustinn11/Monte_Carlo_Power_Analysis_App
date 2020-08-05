@@ -9,6 +9,7 @@ library(shiny)
 #UI
 ui <- fluidPage(
   titlePanel("Monte Carlo Power Analysis"),
+  br(),
   sidebarLayout(
     sidebarPanel(
       p("This is an application for graphically representing power as a function of sample size for some anticipated effect size and variance. Input values for number of simulations, minimum relevant effect size (as a percentage of effect), and standard deviation (as a percentage of effect)."),
@@ -23,6 +24,8 @@ ui <- fluidPage(
       p(strong("Table")),
       checkboxInput(inputId = "table", label = "Display table", value = TRUE),
       
+      submitButton(text = "Apply Changes")
+      
     )
     ,
     mainPanel(
@@ -34,14 +37,21 @@ ui <- fluidPage(
 )
 
 #Server
-server <- function(input, output, session) {
+server <- function(input, output) {
   
-  #Set the reactivity
-#  observe({
-#    updateNumericInput(session, inputId = "n_sims")
-#    updateNumericInput(session, "fx")
-#    updateNumericInput(session, "sd")
-#  })
+  #Set Reactive Values
+  rv <- reactiveValues(input$n_sims)
+  
+  #Data Randomizers
+  data_randomizer <- function(n_reps, fx, sd) {
+    
+    control <- rnorm(n_reps, 1, sd)
+    treat <- rnorm(n_reps, (1+1*fx), sd)
+    
+    outcomes <- cbind(control, treat)
+    return(outcomes)
+    
+  }
   
   #Set reps
   n_reps = c(2:50)
@@ -52,7 +62,7 @@ server <- function(input, output, session) {
                    pwr = sapply(n_reps, function(x) {
                      
                      
-                     p.val <- replicate(input$n_sims,
+                     p.val <- replicate((rv()),
                                         {
                                           df <- data_randomizer(x, (input$fx/100), (input$sd/100))
                                           
