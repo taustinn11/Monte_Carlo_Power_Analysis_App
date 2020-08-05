@@ -21,9 +21,6 @@ ui <- fluidPage(
       p(strong("Plot")),
       checkboxInput(inputId = "smoother", label = "Show smoothing line", value = FALSE),
       
-      p(strong("Table")),
-      checkboxInput(inputId = "table", label = "Display table", value = TRUE),
-      
       submitButton(text = "Apply Changes")
       
     )
@@ -38,9 +35,6 @@ ui <- fluidPage(
 
 #Server
 server <- function(input, output) {
-  
-  #Set Reactive Values
-  rv <- reactiveValues(input$n_sims)
   
   #Data Randomizers
   data_randomizer <- function(n_reps, fx, sd) {
@@ -62,7 +56,7 @@ server <- function(input, output) {
                    pwr = sapply(n_reps, function(x) {
                      
                      
-                     p.val <- replicate((rv()),
+                     p.val <- replicate(input$n_sims,
                                         {
                                           df <- data_randomizer(x, (input$fx/100), (input$sd/100))
                                           
@@ -71,7 +65,7 @@ server <- function(input, output) {
                                           return(p.val)
                                         }
                      )
-                     sum(p.val<0.05)/n_sims*100
+                     sum(p.val<0.05)/input$n_sims*100
                    } 
                    )
   )
