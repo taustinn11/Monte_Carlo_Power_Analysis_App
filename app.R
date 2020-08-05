@@ -10,11 +10,14 @@ library(shiny)
 ui <- fluidPage(
   titlePanel("Monte Carlo Power Analysis"),
   br(),
+  p("This is an application for graphically representing power as a function of sample size for some anticipated effect size and variance. Input values for number of simulations, minimum relevant effect size (as a percentage of effect), and standard deviation (as a percentage of effect)."),
+  br(),
+  
   sidebarLayout(
     sidebarPanel(
-      p("This is an application for graphically representing power as a function of sample size for some anticipated effect size and variance. Input values for number of simulations, minimum relevant effect size (as a percentage of effect), and standard deviation (as a percentage of effect)."),
       
-      numericInput(inputId = "n_sims", label = "Number of simulations (more will generate a smoother curve but may take longer)", value = 100, step = 100),
+      numericInput(inputId = "n_sims", label = "Number of simulations (more will generate a smoother curve but may take longer)", value = 300, step = 100),
+      sliderInput(inputId = "n_reps", label = "Number of independent replicates to consider (more will result in a longer computation time for a given number of simulations)", min = 2, max = 100, value = c(2, 20)),
       numericInput(inputId = "fx", label = "Minimum relevant effect size (as a percentage of the effect)", value = 10, min = 0, max = 500, step = 10),
       numericInput(inputId = "sd", label = "Anticipated standard deviation (as a percentage of the effect)", value = 10, min = 0, max = 500, step = 5),
       
@@ -26,7 +29,6 @@ ui <- fluidPage(
     )
     ,
     mainPanel(
-      h3("Cumulative Power Acquisition with Increasing Sample Size"),
       plotOutput(outputId = "plot"),
       tableOutput(outputId = "table")
     )
@@ -48,12 +50,12 @@ server <- function(input, output) {
   }
   
   #Set reps
-  n_reps = c(2:50)
+  n_reps = reactive({c(input$n_reps[1]:input$n_reps[2])})
   
   #Table
   df <- reactive({
-    data.frame(n_reps, 
-                   pwr = sapply(n_reps, function(x) {
+    data.frame(n_reps(), 
+                   pwr = sapply(n_reps(), function(x) {
                      
                      
                      p.val <- replicate(input$n_sims,
@@ -77,7 +79,7 @@ server <- function(input, output) {
     
   #Plot
   output$plot <- renderPlot({
-      gg <- ggplot(df(), aes(n_reps, pwr))+
+      gg <- ggplot(df(), aes(n_reps(), pwr))+
       geom_line(size = 2, color = "Red")+
       geom_hline(yintercept = 80, linetype = 2)+
       ggtitle("Cumulative Power Distribution")+
